@@ -37,11 +37,6 @@ func GetTypeAndBits(typeName string) (string, int, error) {
 		return name, 0, errors.New("BitOutOfRangeError")
 	}
 
-	if bits >= 128 {
-		fmt.Print("Error: the number of bits must be less than or equal to 128.")
-		return name, 0, errors.New("BitOutOfRangeError")
-	}
-
 	boL2 := math.Log2(float64(bits))
 
 	if math.Mod(boL2, 1.0) != 0.0 {
