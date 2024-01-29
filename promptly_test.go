@@ -1,7 +1,9 @@
 package promptly
 
 import (
+	"math"
 	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -43,8 +45,20 @@ type convertInputToTypeTest struct {
 var cItTCases = []convertInputToTypeTest{
 	{"16", "int"},
 	{"-1234", "int"},
-	{"1234545", "int64"},
+	{"1234545", "int32"},
 	{"foobar", "string"},
+
+	{strconv.Itoa(math.MaxInt), "int"},
+	{strconv.Itoa(math.MaxInt8), "int8"},
+	{strconv.Itoa(math.MaxInt16), "int16"},
+	{strconv.Itoa(math.MaxInt32), "int32"},
+	{strconv.Itoa(math.MaxInt64), "int64"},
+
+	{strconv.Itoa(math.MinInt), "int"},
+	{strconv.Itoa(math.MinInt8), "int8"},
+	{strconv.Itoa(math.MinInt16), "int16"},
+	{strconv.Itoa(math.MinInt32), "int32"},
+	{strconv.Itoa(math.MinInt64), "int64"},
 }
 
 func TestConvertInputToType(t *testing.T) {

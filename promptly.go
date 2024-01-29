@@ -60,7 +60,7 @@ func ConvertInputToType(input *string, t string) (interface{}, error) {
 		if bits <= 0 {
 			return strconv.Atoi(*input)
 		} else {
-			return strconv.ParseInt(*input, 10, bits)
+			return stringToInt(input, &bits)
 		}
 	case "float":
 		return strconv.ParseFloat(*input, bits)
@@ -70,6 +70,32 @@ func ConvertInputToType(input *string, t string) (interface{}, error) {
 		return strconv.ParseComplex(*input, bits)
 	default:
 		return *input, nil
+	}
+}
+
+func stringToInt(input *string, bits *int) (interface{}, error) {
+	o, err := strconv.ParseInt(*input, 10, *bits)
+	if err != nil {
+		fmt.Printf("Error: input %s is not valid for conversion", *input)
+		return 0, err
+	}
+
+	if *bits >= 64 {
+		return o, nil
+	}
+
+	switch *bits {
+	case 8:
+		var cI int8 = int8(o)
+		return cI, nil
+	case 16:
+		var cI int16 = int16(o)
+		return cI, nil
+	case 32:
+		var cI int32 = int32(o)
+		return cI, nil
+	default:
+		return o, nil
 	}
 }
 
