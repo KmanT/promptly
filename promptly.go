@@ -1,12 +1,11 @@
 package promptly
 
 import (
+	"KmanT/qwikvert"
+
 	"bufio"
-	"errors"
 	"fmt"
-	"math"
-	"regexp"
-	"strconv"
+	"reflect"
 	"strings"
 )
 
@@ -16,134 +15,50 @@ func GetSimplePromptText(rdr *bufio.Reader, prmpt string) string {
 	return strings.TrimRight(txt, "\n")
 }
 
-func GetTypeAndBits(typeName string) (string, int, error) {
-	if typeName == "rune" {
-		return "int", 32, nil
-	}
+func GetPromptVerify(rdr *bufio.Reader, prmpt string, validInpt map[interface{}]bool) string {
+	var in string
+	isValid := false
+	convType := reflect.TypeOf(validInpt).Key().String()
 
-	if !regexp.MustCompile(`[a-z]+\d{1,3}`).MatchString(typeName) {
-		return typeName, 0, nil
-	}
+	for !isValid {
+		in = GetSimplePromptText(rdr, prmpt)
 
-	name := regexp.MustCompile(`[a-z]+`).FindString(typeName)
-	bitStr := regexp.MustCompile(`\d{1,3}`).FindString(typeName)
+		isValid, _ = validateInput(in, convType, validInpt)
 
-	bits, err := strconv.Atoi(bitStr)
-	if err != nil {
-		fmt.Printf("Warning: could not find bits in %q", typeName)
-		return name, 0, nil
-	}
-
-	if bits < 8 {
-		fmt.Print("Error: the number of bits must be greater than 8.")
-		return name, 0, errors.New("BitOutOfRangeError")
-	}
-
-	boL2 := math.Log2(float64(bits))
-
-	if math.Mod(boL2, 1.0) != 0.0 {
-		fmt.Print("Error: the number of bits must be a power of 2.")
-		return name, 0, errors.New("BitNotPowerOfTwoError")
-	}
-
-	return name, bits, nil
-}
-
-func ConvertInputToType(input *string, t string) (interface{}, error) {
-	name, bits, _ := GetTypeAndBits(t)
-
-	switch name {
-	case "int":
-		if bits <= 0 {
-			return strconv.Atoi(*input)
-		} else {
-			return stringToInt(input, &bits)
+		if !isValid {
+			fmt.Printf("Input '%s' is invalid. Try again", in)
 		}
-	case "uint":
-		return stringToUint(input, &bits)
-	case "float":
-		return stringToFloat(input, &bits)
-	case "rune":
-		bits = 32
-		return stringToInt(input, &bits)
-	default:
-		return *input, nil
 	}
+
+	return in
 }
 
-func stringToInt(input *string, bits *int) (interface{}, error) {
-	o, err := strconv.ParseInt(*input, 10, *bits)
+func GetPromptVerifyConvert(rdr *bufio.Reader, prmpt string, validInpt map[interface{}]bool) interface{} {
+	var converted interface{}
+	isValid := false
+	convType := reflect.TypeOf(validInpt).Key().String()
+
+	for !isValid {
+		in := GetSimplePromptText(rdr, prmpt)
+
+		isValid, converted = validateInput(in, convType, validInpt)
+
+		if !isValid {
+			fmt.Printf("Input '%s' is invalid. Try again", in)
+		}
+	}
+
+	return converted
+}
+
+func validateInput(in, convType string, validInpt map[interface{}]bool) (bool, interface{}) {
+	var convIn interface{}
+	convIn, err := qwikvert.ConvertInputToType(&in, convType)
 	if err != nil {
-		fmt.Printf("Error: input %s is not valid for int conversion", *input)
-		return 0, err
+		fmt.Println(err)
+		fmt.Println("Try again")
+		return false, -1
 	}
 
-	if *bits >= 64 {
-		return o, nil
-	}
-
-	switch *bits {
-	case 8:
-		var cI int8 = int8(o)
-		return cI, nil
-	case 16:
-		var cI int16 = int16(o)
-		return cI, nil
-	case 32:
-		var cI int32 = int32(o)
-		return cI, nil
-	default:
-		return o, nil
-	}
+	return validInpt[convIn], convIn
 }
-
-func stringToUint(input *string, bits *int) (interface{}, error) {
-	o, err := strconv.ParseUint(*input, 10, *bits)
-	if err != nil {
-		fmt.Printf("Error: input %s is not valid for unit conversion", *input)
-		return 0, err
-	}
-
-	if *bits >= 64 {
-		return o, nil
-	}
-
-	switch *bits {
-	case 0:
-		var cI uint = uint(o)
-		return cI, nil
-	case 8:
-		var cI uint8 = uint8(o)
-		return cI, nil
-	case 16:
-		var cI uint16 = uint16(o)
-		return cI, nil
-	case 32:
-		var cI uint32 = uint32(o)
-		return cI, nil
-	default:
-		return o, nil
-	}
-}
-
-func stringToFloat(input *string, bits *int) (interface{}, error) {
-	o, err := strconv.ParseFloat(*input, *bits)
-	if err != nil {
-		fmt.Printf("Error: input %s is not valid for float conversion", *input)
-		return 0, err
-	}
-
-	if *bits >= 64 {
-		return o, nil
-	}
-
-	switch *bits {
-	case 32:
-		var cF float32 = float32(o)
-		return cF, nil
-	default:
-		return o, nil
-	}
-}
-
-// TODO: prompt verification
