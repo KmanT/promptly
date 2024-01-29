@@ -59,6 +59,18 @@ var cItTCases = []convertInputToTypeTest{
 	{strconv.Itoa(math.MinInt16), "int16"},
 	{strconv.Itoa(math.MinInt32), "int32"},
 	{strconv.Itoa(math.MinInt64), "int64"},
+
+	{strconv.FormatUint(uint64(math.MaxUint), 10), "uint"},
+	{strconv.FormatUint(uint64(math.MaxUint8), 10), "uint8"},
+	{strconv.FormatUint(uint64(math.MaxUint16), 10), "uint16"},
+	{strconv.FormatUint(uint64(math.MaxUint32), 10), "uint32"},
+	{strconv.FormatUint(uint64(math.MaxUint64), 10), "uint64"},
+
+	{strconv.FormatUint(uint64(0), 10), "uint"},
+	{strconv.FormatUint(uint64(0), 10), "uint8"},
+	{strconv.FormatUint(uint64(0), 10), "uint16"},
+	{strconv.FormatUint(uint64(0), 10), "uint32"},
+	{strconv.FormatUint(uint64(0), 10), "uint64"},
 }
 
 func TestConvertInputToType(t *testing.T) {

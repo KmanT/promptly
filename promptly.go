@@ -62,6 +62,8 @@ func ConvertInputToType(input *string, t string) (interface{}, error) {
 		} else {
 			return stringToInt(input, &bits)
 		}
+	case "uint":
+		return stringToUint(input, &bits)
 	case "float":
 		return strconv.ParseFloat(*input, bits)
 	case "rune":
@@ -76,7 +78,7 @@ func ConvertInputToType(input *string, t string) (interface{}, error) {
 func stringToInt(input *string, bits *int) (interface{}, error) {
 	o, err := strconv.ParseInt(*input, 10, *bits)
 	if err != nil {
-		fmt.Printf("Error: input %s is not valid for conversion", *input)
+		fmt.Printf("Error: input %s is not valid for int conversion", *input)
 		return 0, err
 	}
 
@@ -93,6 +95,35 @@ func stringToInt(input *string, bits *int) (interface{}, error) {
 		return cI, nil
 	case 32:
 		var cI int32 = int32(o)
+		return cI, nil
+	default:
+		return o, nil
+	}
+}
+
+func stringToUint(input *string, bits *int) (interface{}, error) {
+	o, err := strconv.ParseUint(*input, 10, *bits)
+	if err != nil {
+		fmt.Printf("Error: input %s is not valid for unit conversion", *input)
+		return 0, err
+	}
+
+	if *bits >= 64 {
+		return o, nil
+	}
+
+	switch *bits {
+	case 0:
+		var cI uint = uint(o)
+		return cI, nil
+	case 8:
+		var cI uint8 = uint8(o)
+		return cI, nil
+	case 16:
+		var cI uint16 = uint16(o)
+		return cI, nil
+	case 32:
+		var cI uint32 = uint32(o)
 		return cI, nil
 	default:
 		return o, nil
