@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-
-	//"os"
 	"math"
 	"regexp"
 	"strconv"
@@ -60,7 +58,7 @@ func ConvertInputToType(input *string, t string) (interface{}, error) {
 	case "uint":
 		return stringToUint(input, &bits)
 	case "float":
-		return strconv.ParseFloat(*input, bits)
+		return stringToFloat(input, &bits)
 	case "rune":
 		return strconv.ParseInt(*input, 10, 32)
 	case "complex":
@@ -120,6 +118,26 @@ func stringToUint(input *string, bits *int) (interface{}, error) {
 	case 32:
 		var cI uint32 = uint32(o)
 		return cI, nil
+	default:
+		return o, nil
+	}
+}
+
+func stringToFloat(input *string, bits *int) (interface{}, error) {
+	o, err := strconv.ParseFloat(*input, *bits)
+	if err != nil {
+		fmt.Printf("Error: input %s is not valid for float conversion", *input)
+		return 0, err
+	}
+
+	if *bits >= 64 {
+		return o, nil
+	}
+
+	switch *bits {
+	case 32:
+		var cF float32 = float32(o)
+		return cF, nil
 	default:
 		return o, nil
 	}

@@ -46,6 +46,8 @@ var cItTCases = []convertInputToTypeTest{
 	{"16", "int"},
 	{"-1234", "int"},
 	{"1234545", "int32"},
+	{"0.0", "float32"},
+	{"0.0", "float64"},
 	{"foobar", "string"},
 
 	{strconv.Itoa(math.MaxInt), "int"},
@@ -71,6 +73,11 @@ var cItTCases = []convertInputToTypeTest{
 	{strconv.FormatUint(uint64(0), 10), "uint16"},
 	{strconv.FormatUint(uint64(0), 10), "uint32"},
 	{strconv.FormatUint(uint64(0), 10), "uint64"},
+
+	{strconv.FormatFloat(float64(math.MaxFloat32), 'f', 2, 32), "float32"},
+	{strconv.FormatFloat(float64(math.MaxFloat64), 'f', 2, 64), "float64"},
+	{strconv.FormatFloat(float64(0), 'f', 2, 32), "float32"},
+	{strconv.FormatFloat(float64(0), 'f', 2, 64), "float64"},
 }
 
 func TestConvertInputToType(t *testing.T) {
