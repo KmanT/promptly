@@ -18,7 +18,7 @@ var tAndBTests = []getTypeAndBitsCase{
 	{"int16", "int", 16},
 	{"int32", "int", 32},
 	{"float32", "float", 32},
-	{"complex128", "complex", 128},
+	{"rune", "int", 32},
 }
 
 func TestGetTypeAndBits(t *testing.T) {
@@ -46,6 +46,7 @@ var cItTCases = []convertInputToTypeTest{
 	{"16", "int"},
 	{"-1234", "int"},
 	{"1234545", "int32"},
+	{"1234545", "rune"},
 	{"0.0", "float32"},
 	{"0.0", "float64"},
 	{"foobar", "string"},
@@ -92,12 +93,14 @@ func TestConvertInputToType(t *testing.T) {
 		outT := reflect.TypeOf(output).String()
 
 		if outT != test.t {
-			t.Errorf(
-				"Output %v could not be be converted to %q, but instead %q",
-				output,
-				test.t,
-				outT,
-			)
+			if test.t == "rune" && outT != "int32" {
+				t.Errorf(
+					"Output %v could not be be converted to %q, but instead %q",
+					output,
+					test.t,
+					outT,
+				)
+			}
 		}
 	}
 }

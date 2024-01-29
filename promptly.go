@@ -17,6 +17,10 @@ func GetSimplePromptText(rdr *bufio.Reader, prmpt string) string {
 }
 
 func GetTypeAndBits(typeName string) (string, int, error) {
+	if typeName == "rune" {
+		return "int", 32, nil
+	}
+
 	if !regexp.MustCompile(`[a-z]+\d{1,3}`).MatchString(typeName) {
 		return typeName, 0, nil
 	}
@@ -60,9 +64,8 @@ func ConvertInputToType(input *string, t string) (interface{}, error) {
 	case "float":
 		return stringToFloat(input, &bits)
 	case "rune":
-		return strconv.ParseInt(*input, 10, 32)
-	case "complex":
-		return strconv.ParseComplex(*input, bits)
+		bits = 32
+		return stringToInt(input, &bits)
 	default:
 		return *input, nil
 	}
