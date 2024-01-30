@@ -1,5 +1,6 @@
 # Promptly
-A library for creating Command Line Applications
+A library for creating Command Line Applications. All you need is bufio.Reader
+and your imagination.
 
 ## Example
 ```go
@@ -31,11 +32,29 @@ func main() {
 }
 ```
 
-## Includes:
-- A simple get input
-- Getting input with validation with expected results
-- Getting input with validation with regex
-- Getting input and validation until the input is correct
+## What's included
 
-## Todo:
+### GetSimplePromptText
+Just get text from user input after a prompt
+
+### GetPromptVerify
+Get user input and verify the input against a list of valid answers
+
+### GetPromptVerifyRegex
+Get user input and verify that the input matches a given pattern
+
+### GetPromptVerifyLoop
+Get user input, verify the input against a list of valid answers, and loops
+until the user has input a valid response
+
+### GetPromptVerifyRegexLoop
+Get user input, verify that the input matches a given pattern, and loops until
+the user has input that is a valid response
+
+## To do:
 - Numeric bounds checking
+- Simple prompt with custom middleware functions
+- Safewords to exit / reset?
+
+## In question:
+- Multi-answer prompts
