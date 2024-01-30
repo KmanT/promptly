@@ -80,6 +80,29 @@ func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt string, vi []string, caseS boo
 	return in
 }
 
+// GetPromptVerifyRegexLoop attempts to get input until the input is valid. If
+// the regex 'rS' is invalid, the program will panic as the set up to this would
+// be fundamentally incorrect and cause an infinite loop. Otherwise, it
+// verifies the input. If the input is invalid, then it will attempt to get the
+// input again. If the input is valid, then the input will be returned.
+func GetPromptVerifyRegexLoop(rdr *bufio.Reader, prmpt string, rS string) string {
+	var in string
+	isValid := false
+
+	for !isValid {
+		isValid, in, err := GetPromptVerifyRegex(rdr, prmpt, rS)
+		if err != nil {
+			fmt.Printf("Regex '%s' is invalid", rS)
+			panic(-1)
+		}
+
+		if !isValid {
+			fmt.Printf("Input '%s' is invalid. Try again", in)
+		}
+	}
+	return in
+}
+
 // sliceToBoolMap is helper function that takes in a slice of types that
 // implement cmp.Ordered (as O) and returns a map with the O type as a key
 // and bool as the value. Effectively creating a set
