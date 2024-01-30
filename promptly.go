@@ -57,27 +57,25 @@ func GetPromptVerifyRegex(rdr *bufio.Reader, prmpt string, rS string) (bool, str
 // input received is invalid, GetPromptVerify will loop again and ask for input
 // again. Once the input is valid GetPromptVerify will return the user's choice.
 func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt string, vi []string, caseS bool) string {
-	var in string
-	isValid := false
-
 	if !caseS {
 		stringSliceToLower(&vi)
 	}
 
 	vIM := sliceToBoolMap[string](vi)
 
-	for !isValid {
-		in = GetSimplePromptText(rdr, prmpt)
+	for {
+		in := GetSimplePromptText(rdr, prmpt)
 		if !caseS {
 			in = strings.ToLower(in)
 		}
 
-		isValid = vIM[in]
+		isValid := vIM[in]
 		if !isValid {
 			fmt.Printf("Input '%s' is invalid. Try again", in)
+		} else {
+			return in
 		}
 	}
-	return in
 }
 
 // GetPromptVerifyRegexLoop attempts to get input until the input is valid. If
@@ -86,21 +84,21 @@ func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt string, vi []string, caseS boo
 // verifies the input. If the input is invalid, then it will attempt to get the
 // input again. If the input is valid, then the input will be returned.
 func GetPromptVerifyRegexLoop(rdr *bufio.Reader, prmpt string, rS string) string {
-	var in string
-	isValid := false
-
-	for !isValid {
+	for {
 		isValid, in, err := GetPromptVerifyRegex(rdr, prmpt, rS)
 		if err != nil {
 			fmt.Printf("Regex '%s' is invalid", rS)
 			panic(-1)
 		}
 
+		fmt.Printf("%s %t\n", in, isValid)
+
 		if !isValid {
 			fmt.Printf("Input '%s' is invalid. Try again", in)
+		} else {
+			return in
 		}
 	}
-	return in
 }
 
 // sliceToBoolMap is helper function that takes in a slice of types that
