@@ -49,8 +49,8 @@ func TestGetSimplePrompts(t *testing.T) {
 
 type getPromptVerifyTests struct {
 	input, prompt string
-	result        bool
-	validCases    map[string]bool
+	result, caseS bool
+	validCases    []string
 }
 
 var gPVTests = []getPromptVerifyTests{
@@ -58,31 +58,57 @@ var gPVTests = []getPromptVerifyTests{
 		"6",
 		"How many days of the week are there?",
 		false,
-		map[string]bool{"7": true},
+		true,
+		[]string{"7"},
 	},
 	{
 		"7",
 		"How many days of the week are there?",
 		true,
-		map[string]bool{"7": true},
+		true,
+		[]string{"7"},
 	},
 	{
 		"Barbie",
 		"Barbie or Oppenheimer?",
 		true,
-		map[string]bool{"Barbie": true, "Oppenheimer": true},
+		true,
+		[]string{"Barbie", "Oppenheimer"},
 	},
 	{
 		"Oppenheimer",
 		"Barbie or Oppenheimer?",
 		true,
-		map[string]bool{"Barbie": true, "Oppenheimer": true},
+		true,
+		[]string{"Barbie", "Oppenheimer"},
 	},
 	{
 		"Super Mario Movie",
 		"Barbie or Oppenheimer?",
 		false,
-		map[string]bool{"Barbie": true, "Oppenheimer": true},
+		true,
+		[]string{"Barbie", "Oppenheimer"},
+	},
+	{
+		"barbie",
+		"Barbie or Oppenheimer?",
+		true,
+		false,
+		[]string{"Barbie", "Oppenheimer"},
+	},
+	{
+		"oppenheimer",
+		"Barbie or Oppenheimer?",
+		true,
+		false,
+		[]string{"Barbie", "Oppenheimer"},
+	},
+	{
+		"super mario movie",
+		"Barbie or Oppenheimer?",
+		false,
+		false,
+		[]string{"Barbie", "Oppenheimer"},
 	},
 }
 
@@ -108,7 +134,7 @@ func TestPromptVerify(t *testing.T) {
 
 		rdr := bufio.NewReader(tmpfile)
 
-		result, _ := GetPromptVerify(rdr, test.prompt, test.validCases)
+		result, _ := GetPromptVerify(rdr, test.prompt, test.validCases, test.caseS)
 
 		if result != test.result {
 			t.Errorf("Test result %t does not match %t expected result", result, test.result)
