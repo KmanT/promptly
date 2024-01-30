@@ -141,3 +141,56 @@ func TestPromptVerify(t *testing.T) {
 		}
 	}
 }
+
+type getPromptVerifyRegexTests struct {
+	input, prompt, r string
+	result           bool
+}
+
+var rThreeDigit string = `^\d{1,3}$`
+var rAlphabetOnly string = `^[a-zA-Z]+$`
+
+var gPVRTests = []getPromptVerifyRegexTests{
+	{"28", "How old are you?", rThreeDigit, true},
+	{"twenty-eight", "How old are you?", rThreeDigit, false},
+	{"20 + eight", "How old are you?", rThreeDigit, false},
+	{"", "How old are you?", rThreeDigit, false},
+	{"KmanT", "What is your name?", rAlphabetOnly, true},
+	{"28", "What is your name?", rAlphabetOnly, false},
+	{"Bob Smith", "What is your name?", rAlphabetOnly, false},
+	{"", "What is your name?", rAlphabetOnly, false},
+}
+
+func TestPromptVerifyRegex(t *testing.T) {
+	for _, test := range gPVRTests {
+
+		content := []byte(test.input)
+		tmpfile, err := os.CreateTemp("", "example")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer os.Remove(tmpfile.Name())
+
+		if _, err := tmpfile.Write(content); err != nil {
+			log.Fatal(err)
+		}
+
+		if _, err := tmpfile.Seek(0, 0); err != nil {
+			log.Fatal(err)
+		}
+
+		rdr := bufio.NewReader(tmpfile)
+
+		result, _, _ := GetPromptVerifyRegex(rdr, test.prompt, test.r)
+
+		if result != test.result {
+			t.Errorf(
+				"Input %s resulting in %t does not match %t expected result",
+				test.input,
+				result,
+				test.result,
+			)
+		}
+	}
+}
