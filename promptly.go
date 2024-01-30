@@ -7,12 +7,15 @@ package promptly
 import (
 	"bufio"
 	"cmp"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
 // GetSimplePromptText gets a single line from the bufio Reader.
 // It also removes the line break '\n' from the input.
+// Use this if you do not require any validation.
 func GetSimplePromptText(rdr *bufio.Reader, prmpt string) string {
 	fmt.Println(prmpt)
 	txt, _ := rdr.ReadString('\n')
@@ -35,7 +38,20 @@ func GetPromptVerify(rdr *bufio.Reader, prmpt string, vi []string, caseS bool) (
 	return viMap[in], in
 }
 
-// TODO: Verify with Regex func
+// GetPromptVerifyRegex verifies input against a regex. If an error is thrown,
+// then GetPromptVerifyRegex returns false, an empty string, and an error.
+// Otherwise, GetPromptVerifyRegex will return a boolean based on if the string
+// matches the input, the input as a string, and nil as the error
+func GetPromptVerifyRegex(rdr *bufio.Reader, prmpt string, rS string) (bool, string, error) {
+	in := GetSimplePromptText(rdr, prmpt)
+	r, err := regexp.Compile(rS)
+
+	if err != nil {
+		return false, "", errors.New("InvalidRegexError")
+	}
+
+	return r.MatchString(in), in, nil
+}
 
 // GetPromptVerifyLoop attempts to get input until the input is valid. If the
 // input received is invalid, GetPromptVerify will loop again and ask for input
@@ -51,7 +67,6 @@ func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt string, vi []string, caseS boo
 	vIM := sliceToBoolMap[string](vi)
 
 	for !isValid {
-		// isValid, in = GetPromptVerify(rdr, prmpt, vi, caseS)
 		in = GetSimplePromptText(rdr, prmpt)
 		if !caseS {
 			in = strings.ToLower(in)
