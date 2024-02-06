@@ -24,9 +24,15 @@ func GetSimplePromptText(rdr *bufio.Reader, prmpt string) string {
 
 // GetPromptVerify gets a single line from the bufio Reader, and checks if the
 // input is included in the list of valid input. GetPromptVerify returns a
-// boolean based on its validity and the input received.
-func GetPromptVerify(rdr *bufio.Reader, prmpt string, vi []string, caseS bool) (bool, string) {
+// boolean based on its validity and the input received, whether or not the
+// the user took a safe exit, and the input from the user.
+func GetPromptVerify(rdr *bufio.Reader, prmpt, safeW string, vi []string, caseS bool) (valid, safeExit bool, input string) {
 	in := GetSimplePromptText(rdr, prmpt)
+
+	if strings.EqualFold(in, safeW) {
+		fmt.Println("SAFE WORD! SAFE WORD!")
+		return false, true, in
+	}
 
 	if !caseS {
 		in = strings.ToLower(in)
@@ -35,28 +41,34 @@ func GetPromptVerify(rdr *bufio.Reader, prmpt string, vi []string, caseS bool) (
 
 	viMap := sliceToBoolMap[string](vi)
 
-	return viMap[in], in
+	return viMap[in], false, in
 }
 
 // GetPromptVerifyRegex verifies input against a regex. If an error is thrown,
 // then GetPromptVerifyRegex returns false, an empty string, and an error.
 // Otherwise, GetPromptVerifyRegex will return a boolean based on if the string
-// matches the input, the input as a string, and nil as the error
-func GetPromptVerifyRegex(rdr *bufio.Reader, prmpt string, rS string) (bool, string, error) {
+// matches the input, whether or not the user took the safe exit,
+// the input as a string, and nil as the error.
+func GetPromptVerifyRegex(rdr *bufio.Reader, prmpt, safeW, rS string) (valid, safeExit bool, input string, err error) {
 	in := GetSimplePromptText(rdr, prmpt)
 	r, err := regexp.Compile(rS)
 
 	if err != nil {
-		return false, "", errors.New("InvalidRegexError")
+		return false, false, "", errors.New("InvalidRegexError")
 	}
 
-	return r.MatchString(in), in, nil
+	if strings.EqualFold(in, safeW) {
+		return false, true, in, nil
+	}
+
+	return r.MatchString(in), false, in, nil
 }
 
 // GetPromptVerifyLoop attempts to get input until the input is valid. If the
 // input received is invalid, GetPromptVerify will loop again and ask for input
-// again. Once the input is valid GetPromptVerify will return the user's choice.
-func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt string, vi []string, caseS bool) string {
+// again. Once the input is valid GetPromptVerify will return whether or not
+// the user took the safe exit and the user's choice.
+func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt, safeW string, vi []string, caseS bool) (safeExit bool, input string) {
 	if !caseS {
 		stringSliceToLower(&vi)
 	}
@@ -65,6 +77,11 @@ func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt string, vi []string, caseS boo
 
 	for {
 		in := GetSimplePromptText(rdr, prmpt)
+
+		if strings.EqualFold(in, safeW) {
+			return true, in
+		}
+
 		if !caseS {
 			in = strings.ToLower(in)
 		}
@@ -73,7 +90,7 @@ func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt string, vi []string, caseS boo
 		if !isValid {
 			fmt.Printf("Input '%s' is invalid. Try again", in)
 		} else {
-			return in
+			return false, in
 		}
 	}
 }
@@ -82,21 +99,25 @@ func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt string, vi []string, caseS boo
 // the regex 'rS' is invalid, the program will panic as the set up to this would
 // be fundamentally incorrect and cause an infinite loop. Otherwise, it
 // verifies the input. If the input is invalid, then it will attempt to get the
-// input again. If the input is valid, then the input will be returned.
-func GetPromptVerifyRegexLoop(rdr *bufio.Reader, prmpt string, rS string) string {
+// input again. If the input is valid, then the input will be returned along
+// with a safe-exit status of false. If the user used a safe word, then the
+// safe exit state will be true and returned along with the input.
+func GetPromptVerifyRegexLoop(rdr *bufio.Reader, prmpt, safeW string, rS string) (safeExit bool, input string) {
 	for {
-		isValid, in, err := GetPromptVerifyRegex(rdr, prmpt, rS)
+		isValid, safeE, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, rS)
 		if err != nil {
 			fmt.Printf("Regex '%s' is invalid", rS)
 			panic(-1)
 		}
 
-		fmt.Printf("%s %t\n", in, isValid)
+		if safeE {
+			return true, in
+		}
 
 		if !isValid {
 			fmt.Printf("Input '%s' is invalid. Try again", in)
 		} else {
-			return in
+			return false, in
 		}
 	}
 }
