@@ -30,7 +30,6 @@ func GetPromptVerify(rdr *bufio.Reader, prmpt, safeW string, vi []string, caseS 
 	in := GetSimplePromptText(rdr, prmpt)
 
 	if strings.EqualFold(in, safeW) {
-		fmt.Println("SAFE WORD! SAFE WORD!")
 		return false, true, in
 	}
 
