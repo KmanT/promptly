@@ -16,10 +16,12 @@ import (
 func main() {
 	rdr := bufio.NewReader(os.Stdin)
 
-	name := promptly.GetPromptVerifyRegexLoop(rdr, "What is your name?", `^[a-zA-Z]+$`)
+    safeWord := "q"
+
+	name := promptly.GetPromptVerifyRegexLoop(rdr, "What is your name?", safeWord, `^[a-zA-Z]+$`)
 
 	answers := []string{"7"}
-	valid, _ := promptly.GetPromptVerify(rdr, "How many days are in the week?", answers, true)
+	valid, _ := promptly.GetPromptVerify(rdr, "How many days are in the week?", safeWord, answers, true)
 
 	var status string
 	if valid {
@@ -33,6 +35,10 @@ func main() {
 ```
 
 ## What's included
+
+You can either just get the user's input, or you can verify the input. Any time
+you want verify must choose the type of verification, and all verify prompts
+require a "safeWord" so the user can exit the prompt safely.
 
 ### GetSimplePromptText
 Just get text from user input after a prompt
@@ -54,7 +60,6 @@ the user has input that is a valid response
 ## To do:
 - Numeric bounds checking
 - Simple prompt with custom middleware functions
-- Safewords to exit / reset?
 
 ## In question:
 - Multi-answer prompts
