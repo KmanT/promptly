@@ -250,3 +250,9 @@ func TestPromptVerifyRegex(t *testing.T) {
 		}
 	}
 }
+
+// verify int range
+
+// verify float32 range
+
+// verify float64 range

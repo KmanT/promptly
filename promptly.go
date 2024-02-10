@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -61,6 +62,121 @@ func GetPromptVerifyRegex(rdr *bufio.Reader, prmpt, safeW, rS string) (valid, sa
 	}
 
 	return r.MatchString(in), false, in, nil
+}
+
+// GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
+// between the min and max int. There is also an option to make the this prompt
+// inclusive (incl == true) or exclusive (incl == false)
+func GetPromptVerifyIntRange(
+	rdr *bufio.Reader,
+	prmpt, safeW string,
+	min, max int,
+	incl bool,
+) (valid, safeExit bool, input int, err error) {
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, ``)
+
+	if err != nil {
+		return valid, safeExit, 0, err
+	}
+
+	if !valid || safeExit {
+		return valid, safeExit, 0, nil
+	}
+
+	convIn, err := strconv.Atoi(in)
+
+	if err != nil {
+		return false, false, 0, err
+	}
+
+	if incl {
+		if convIn < min {
+			return false, false, convIn, nil
+		}
+		return true, false, convIn, nil
+	} else {
+		if convIn <= min {
+			return false, false, convIn, nil
+		}
+		return true, false, convIn, nil
+	}
+}
+
+// GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
+// between the min and max float32. There is also an option to make the this prompt
+// inclusive (incl == true) or exclusive (incl == false)
+func GetPromptVerifyFloat32Range(
+	rdr *bufio.Reader,
+	prmpt, safeW string,
+	min, max float32,
+	incl bool,
+) (valid, safeExit bool, input float32, err error) {
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, ``)
+
+	if err != nil {
+		return valid, safeExit, 0, err
+	}
+
+	if !valid || safeExit {
+		return valid, safeExit, 0, nil
+	}
+
+	pIn, err := strconv.ParseFloat(in, 64)
+	convIn := float32(pIn)
+
+	if err != nil {
+		return false, false, 0, err
+	}
+
+	if incl {
+		if convIn < min {
+			return false, false, convIn, nil
+		}
+		return true, false, convIn, nil
+	} else {
+		if convIn <= min {
+			return false, false, convIn, nil
+		}
+		return true, false, convIn, nil
+	}
+}
+
+// GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
+// between the min and max float64. There is also an option to make the this prompt
+// inclusive (incl == true) or exclusive (incl == false)
+func GetPromptVerifyFloat64Range(
+	rdr *bufio.Reader,
+	prmpt, safeW string,
+	min, max float64,
+	incl bool,
+) (valid, safeExit bool, input float64, err error) {
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, ``)
+
+	if err != nil {
+		return valid, safeExit, 0, err
+	}
+
+	if !valid || safeExit {
+		return valid, safeExit, 0, nil
+	}
+
+	convIn, err := strconv.ParseFloat(in, 32)
+
+	if err != nil {
+		return false, false, 0, err
+	}
+
+	if incl {
+		if convIn < min {
+			return false, false, convIn, nil
+		}
+		return true, false, convIn, nil
+	} else {
+		if convIn <= min {
+			return false, false, convIn, nil
+		}
+		return true, false, convIn, nil
+	}
 }
 
 // GetPromptVerifyLoop attempts to get input until the input is valid. If the
