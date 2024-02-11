@@ -203,7 +203,7 @@ func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt, safeW string, vi []string, ca
 
 		isValid := vIM[in]
 		if !isValid {
-			fmt.Printf("Input '%s' is invalid. Try again", in)
+			fmt.Printf("Input '%s' is invalid. Try again\n", in)
 		} else {
 			return false, in
 		}
@@ -230,7 +230,7 @@ func GetPromptVerifyRegexLoop(rdr *bufio.Reader, prmpt, safeW string, rS string)
 		}
 
 		if !isValid {
-			fmt.Printf("Input '%s' is invalid. Try again", in)
+			fmt.Printf("Input '%s' is invalid. Try again\n", in)
 		} else {
 			return false, in
 		}
