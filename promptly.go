@@ -64,6 +64,16 @@ func GetPromptVerifyRegex(rdr *bufio.Reader, prmpt, safeW, rS string) (valid, sa
 	return r.MatchString(in), false, in, nil
 }
 
+// numericFitsInRange checks if input fits within a min and max. If incl is true,
+// the check will be inclusive; if false it will be exclusive.
+func numericFitsInRange[O cmp.Ordered](incl *bool, in, min, max *O) (bool, bool, O, error) {
+	if *incl {
+		return !(*in < *min || *in > *max), false, *in, nil
+	} else {
+		return !(*in <= *min || *in >= *max), false, *in, nil
+	}
+}
+
 // GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
 // between the min and max int. There is also an option to make the this prompt
 // inclusive (incl == true) or exclusive (incl == false)
@@ -89,17 +99,7 @@ func GetPromptVerifyIntRange(
 		return false, false, 0, err
 	}
 
-	if incl {
-		if convIn < min {
-			return false, false, convIn, nil
-		}
-		return true, false, convIn, nil
-	} else {
-		if convIn <= min {
-			return false, false, convIn, nil
-		}
-		return true, false, convIn, nil
-	}
+	return numericFitsInRange[int](&incl, &convIn, &min, &max)
 }
 
 // GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
@@ -111,7 +111,7 @@ func GetPromptVerifyFloat32Range(
 	min, max float32,
 	incl bool,
 ) (valid, safeExit bool, input float32, err error) {
-	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, ``)
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, `^\d*$`)
 
 	if err != nil {
 		return valid, safeExit, 0, err
@@ -128,17 +128,7 @@ func GetPromptVerifyFloat32Range(
 		return false, false, 0, err
 	}
 
-	if incl {
-		if convIn < min {
-			return false, false, convIn, nil
-		}
-		return true, false, convIn, nil
-	} else {
-		if convIn <= min {
-			return false, false, convIn, nil
-		}
-		return true, false, convIn, nil
-	}
+	return numericFitsInRange[float32](&incl, &convIn, &min, &max)
 }
 
 // GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
@@ -150,7 +140,7 @@ func GetPromptVerifyFloat64Range(
 	min, max float64,
 	incl bool,
 ) (valid, safeExit bool, input float64, err error) {
-	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, ``)
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, `^\d*.\d*$`)
 
 	if err != nil {
 		return valid, safeExit, 0, err
@@ -166,17 +156,7 @@ func GetPromptVerifyFloat64Range(
 		return false, false, 0, err
 	}
 
-	if incl {
-		if convIn < min {
-			return false, false, convIn, nil
-		}
-		return true, false, convIn, nil
-	} else {
-		if convIn <= min {
-			return false, false, convIn, nil
-		}
-		return true, false, convIn, nil
-	}
+	return numericFitsInRange[float64](&incl, &convIn, &min, &max)
 }
 
 // GetPromptVerifyLoop attempts to get input until the input is valid. If the
