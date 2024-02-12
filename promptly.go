@@ -13,6 +13,9 @@ import (
 	"strings"
 )
 
+const intR string = `^\d*$`
+const floatR string = `^\d*(.\d*)?$`
+
 // GetSimplePromptText gets a single line from the bufio Reader.
 // It also removes the line break '\n' from the input.
 // Use this if you do not require any validation.
@@ -72,7 +75,7 @@ func GetPromptVerifyIntRange(
 	min, max int,
 	incl bool,
 ) (valid, safeExit bool, input int, err error) {
-	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, ``)
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, intR)
 
 	if err != nil {
 		return valid, safeExit, 0, err
@@ -83,7 +86,6 @@ func GetPromptVerifyIntRange(
 	}
 
 	convIn, err := strconv.Atoi(in)
-
 	if err != nil {
 		return false, false, 0, err
 	}
@@ -100,7 +102,7 @@ func GetPromptVerifyFloat32Range(
 	min, max float32,
 	incl bool,
 ) (valid, safeExit bool, input float32, err error) {
-	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, `^\d*$`)
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, floatR)
 
 	if err != nil {
 		return valid, safeExit, 0, err
@@ -110,13 +112,12 @@ func GetPromptVerifyFloat32Range(
 		return valid, safeExit, 0, nil
 	}
 
-	pIn, err := strconv.ParseFloat(in, 64)
-	convIn := float32(pIn)
-
+	pIn, err := strconv.ParseFloat(in, 32)
 	if err != nil {
 		return false, false, 0, err
 	}
 
+	convIn := float32(pIn)
 	return numericFitsInRange[float32](&incl, &convIn, &min, &max)
 }
 
@@ -129,7 +130,7 @@ func GetPromptVerifyFloat64Range(
 	min, max float64,
 	incl bool,
 ) (valid, safeExit bool, input float64, err error) {
-	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, `^\d*.\d*$`)
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, floatR)
 
 	if err != nil {
 		return valid, safeExit, 0, err
@@ -140,7 +141,6 @@ func GetPromptVerifyFloat64Range(
 	}
 
 	convIn, err := strconv.ParseFloat(in, 32)
-
 	if err != nil {
 		return false, false, 0, err
 	}
