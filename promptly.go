@@ -13,8 +13,8 @@ import (
 	"strings"
 )
 
-const intR string = `^\d*$`
-const floatR string = `^\d*(.\d*)?$`
+const intR string = `^[+-]?\d*$`
+const floatR string = `^[+-]?\d*(.\d*)?$`
 
 // GetSimplePromptText gets a single line from the bufio Reader.
 // It also removes the line break '\n' from the input.
