@@ -17,24 +17,30 @@ var gSPTests = []getSimplePromptTest{
 	{"365 days", "How many years are there in a year?"},
 }
 
+func initTest(input *string) *os.File {
+	content := []byte(*input)
+	tmpfile, err := os.CreateTemp("", "example")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write(content); err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := tmpfile.Seek(0, 0); err != nil {
+		log.Fatal(err)
+	}
+
+	return tmpfile
+}
+
 func TestGetSimplePrompts(t *testing.T) {
 	for _, test := range gSPTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
@@ -149,21 +155,7 @@ func TestPromptVerify(t *testing.T) {
 
 	for _, test := range gPVTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
@@ -215,21 +207,7 @@ var gPVRTests = []getPromptVerifyRegexTest{
 func TestPromptVerifyRegex(t *testing.T) {
 	for _, test := range gPVRTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
@@ -250,7 +228,6 @@ func TestPromptVerifyRegex(t *testing.T) {
 	}
 }
 
-// verify int range
 type getPromptVerifyIntRangeTest struct {
 	input, prompt, safeW    string
 	inclusive, valid, safeE bool
@@ -274,21 +251,7 @@ var gPVIRTests = []getPromptVerifyIntRangeTest{
 func TestPromptVerifyIntRange(t *testing.T) {
 	for _, test := range gPVIRTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
@@ -327,26 +290,18 @@ var gPVF32RTests = []getPromptVerifyFloat32RangeTest{
 	{"10.1", "Pick 1.0 - 10.0", "q", true, false, false, 1, 10, 10.1},
 	{"0.999999", "Pick 1.0 - 10.0", "q", true, false, false, 1, 10, 0.999999},
 	{"q", "Pick 1.0 - 10.0", "q", true, false, true, 1, 10, 0.0},
+	{"1.0", "Pick 0.0 - 10.0", "q", false, true, false, 0, 10, 1.0},
+	{"5.6", "Pick 0.0 - 10.0", "q", false, true, false, 0, 10, 5.6},
+	{"10.0", "Pick 0.0 - 10.1", "q", false, true, false, 1, 10.1, 10.0},
+	{"10.1", "Pick 1.0 - 10.1", "q", false, false, false, 1, 10.1, 10.1},
+	{"0.999999", "Pick 0.999999 - 10.0", "q", false, false, false, 0.999999, 10, 0.999999},
+	{"q", "Pick 1.0 - 10.0", "q", false, false, true, 1, 10, 0.0},
 }
 
 func TestPromptVerifyFloat32Range(t *testing.T) {
 	for _, test := range gPVF32RTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
@@ -384,26 +339,18 @@ var gPVF64RTests = []getPromptVerifyFloat64RangeTest{
 	{"10.1", "Pick 1.0 - 10.0", "q", true, false, false, 1, 10, 10.1},
 	{"0.999999", "Pick 1.0 - 10.0", "q", true, false, false, 1, 10, 0.999999},
 	{"q", "Pick 1.0 - 10.0", "q", true, false, true, 1, 10, 0.0},
+	{"1.0", "Pick 0.0 - 10.0", "q", false, true, false, 0, 10, 1.0},
+	{"5.6", "Pick 0.0 - 10.0", "q", false, true, false, 0, 10, 5.6},
+	{"10.0", "Pick 0.0 - 10.1", "q", false, true, false, 1, 10.1, 10.0},
+	{"10.1", "Pick 1.0 - 10.1", "q", false, false, false, 1, 10.1, 10.1},
+	{"0.999999", "Pick 0.999999 - 10.0", "q", false, false, false, 0.999999, 10, 0.999999},
+	{"q", "Pick 1.0 - 10.0", "q", false, false, true, 1, 10, 0.0},
 }
 
 func TestPromptVerifyFloat64Range(t *testing.T) {
 	for _, test := range gPVF64RTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
