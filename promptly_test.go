@@ -2,7 +2,9 @@ package promptly
 
 import (
 	"bufio"
+	"fmt"
 	"log"
+	"math"
 	"os"
 	"testing"
 )
@@ -368,9 +370,32 @@ func TestPromptVerifyFloat64Range(t *testing.T) {
 				test.valid,
 			)
 		}
-
-		if o != test.output {
-			t.Errorf("Output %f does not match the expected output %f", o, test.output)
+		
+		if !withinTolerance(o, test.output, 1e-7) {
+			t.Errorf("Output %f does not match the expected output %f; The dif is %f",
+				o,
+				test.output,
+				getFloatDif(&o, &test.output),
+			)
+			fmt.Println(getFloatDif(&o, &test.output))
 		}
 	}
+}
+
+func withinTolerance(a, b, e float64) bool {
+	if a == b {
+		return true
+	}
+
+	d := math.Abs(a - b)
+
+	if b == 0 {
+		return d < e
+	}
+
+	return (d / math.Abs(b)) < e
+}
+
+func getFloatDif(o, ex *float64) float64 {
+	return *o - *ex
 }

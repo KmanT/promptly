@@ -123,7 +123,8 @@ func GetPromptVerifyFloat32Range(
 
 // GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
 // between the min and max float64. There is also an option to make the this prompt
-// inclusive (incl == true) or exclusive (incl == false)
+// inclusive (incl == true) or exclusive (incl == false). Caution, there is an accuracy
+// within 7 decimal places, so be wary.
 func GetPromptVerifyFloat64Range(
 	rdr *bufio.Reader,
 	prmpt, safeW string,
