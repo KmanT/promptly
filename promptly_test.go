@@ -2,40 +2,47 @@ package promptly
 
 import (
 	"bufio"
+	"fmt"
 	"log"
+	"math"
 	"os"
 	"testing"
 )
 
-type getSimplePromptTests struct {
+type getSimplePromptTest struct {
 	input, prompt string
 }
 
-var gSPTests = []getSimplePromptTests{
+var gSPTests = []getSimplePromptTest{
 	{"7", "How many days of the week are there?"},
 	{"One two three", "Count to three"},
 	{"365 days", "How many years are there in a year?"},
 }
 
-func TestGetSimplePrompts(t *testing.T) {
+func initTest(input *string) *os.File {
+	content := []byte(*input)
+	tmpfile, err := os.CreateTemp("", "example")
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write(content); err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := tmpfile.Seek(0, 0); err != nil {
+		log.Fatal(err)
+	}
+
+	return tmpfile
+}
+
+func TestGetSimplePrompts(t *testing.T) {
 	for _, test := range gSPTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
@@ -47,13 +54,13 @@ func TestGetSimplePrompts(t *testing.T) {
 	}
 }
 
-type getPromptVerifyTests struct {
+type getPromptVerifyTest struct {
 	input, prompt, safeW string
 	result, caseS, safeE bool
 	validCases           []string
 }
 
-var gPVTests = []getPromptVerifyTests{
+var gPVTests = []getPromptVerifyTest{
 	{
 		"6",
 		"How many days of the week are there?",
@@ -150,21 +157,7 @@ func TestPromptVerify(t *testing.T) {
 
 	for _, test := range gPVTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
@@ -192,7 +185,7 @@ func TestPromptVerify(t *testing.T) {
 	}
 }
 
-type getPromptVerifyRegexTests struct {
+type getPromptVerifyRegexTest struct {
 	input, prompt, safeW, r string
 	result, safeE           bool
 }
@@ -200,7 +193,7 @@ type getPromptVerifyRegexTests struct {
 var rThreeDigit string = `^\d{1,3}$`
 var rAlphabetOnly string = `^[a-zA-Z]+$`
 
-var gPVRTests = []getPromptVerifyRegexTests{
+var gPVRTests = []getPromptVerifyRegexTest{
 	{"28", "How old are you?", "q", rThreeDigit, true, false},
 	{"twenty-eight", "How old are you?", "q", rThreeDigit, false, false},
 	{"20 + eight", "How old are you?", "q", rThreeDigit, false, false},
@@ -216,21 +209,7 @@ var gPVRTests = []getPromptVerifyRegexTests{
 func TestPromptVerifyRegex(t *testing.T) {
 	for _, test := range gPVRTests {
 
-		content := []byte(test.input)
-		tmpfile, err := os.CreateTemp("", "example")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer os.Remove(tmpfile.Name())
-
-		if _, err := tmpfile.Write(content); err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := tmpfile.Seek(0, 0); err != nil {
-			log.Fatal(err)
-		}
+		tmpfile := initTest(&test.input)
 
 		rdr := bufio.NewReader(tmpfile)
 
@@ -249,4 +228,174 @@ func TestPromptVerifyRegex(t *testing.T) {
 			)
 		}
 	}
+}
+
+type getPromptVerifyIntRangeTest struct {
+	input, prompt, safeW    string
+	inclusive, valid, safeE bool
+	min, max, output        int
+}
+
+var gPVIRTests = []getPromptVerifyIntRangeTest{
+	{"1", "Pick 1 - 10", "q", true, true, false, 1, 10, 1},
+	{"+1", "Pick -1 - 10", "q", true, true, false, 1, 10, 1},
+	{"-1", "Pick -1 - 10", "q", true, true, false, -1, 10, -1},
+	{"5", "Pick 1 - 10", "q", true, true, false, 1, 10, 5},
+	{"5", "Pick 1 - 10", "q", false, true, false, 1, 10, 5},
+	{"10", "Pick 1 - 10", "q", true, true, false, 1, 10, 10},
+	{"11", "Pick 1 - 10", "q", false, false, false, 1, 10, 11},
+	{"0", "Pick 1 - 10", "q", false, false, false, 1, 10, 0},
+	{"q", "Pick 1 - 10", "q", false, false, true, 1, 10, 0},
+	{"Uh yeah", "Pick 1 - 10", "q", false, false, false, 1, 10, 0},
+	{"Uh yeah 5", "Pick 1 - 10", "q", false, false, false, 1, 10, 0},
+}
+
+func TestPromptVerifyIntRange(t *testing.T) {
+	for _, test := range gPVIRTests {
+
+		tmpfile := initTest(&test.input)
+
+		rdr := bufio.NewReader(tmpfile)
+
+		result, safeExit, o, _ := GetPromptVerifyIntRange(rdr, test.prompt, test.safeW, test.min, test.max, test.inclusive)
+
+		if safeExit != test.safeE {
+			t.Errorf("Test safeExit status %t does not match the expected safeExit status %t", safeExit, test.safeE)
+		}
+
+		if result != test.valid {
+			t.Errorf(
+				"Input %s resulting in %t does not match %t expected result",
+				test.input,
+				result,
+				test.valid,
+			)
+		}
+
+		if o != test.output {
+			t.Errorf("Output %d does not match the expected output %d", o, test.output)
+		}
+	}
+
+}
+
+type getPromptVerifyFloat32RangeTest struct {
+	input, prompt, safeW    string
+	inclusive, valid, safeE bool
+	min, max, output        float32
+}
+
+var gPVF32RTests = []getPromptVerifyFloat32RangeTest{
+	{"1.0", "Pick 1.0 - 10.0", "q", true, true, false, 1, 10, 1.0},
+	{"5.6", "Pick 1.0 - 10.0", "q", true, true, false, 1, 10, 5.6},
+	{"10.0", "Pick 1.0 - 10.0", "q", true, true, false, 1, 10, 10.0},
+	{"10.1", "Pick 1.0 - 10.0", "q", true, false, false, 1, 10, 10.1},
+	{"0.999999", "Pick 1.0 - 10.0", "q", true, false, false, 1, 10, 0.999999},
+	{"q", "Pick 1.0 - 10.0", "q", true, false, true, 1, 10, 0.0},
+	{"1.0", "Pick 0.0 - 10.0", "q", false, true, false, 0, 10, 1.0},
+	{"5.6", "Pick 0.0 - 10.0", "q", false, true, false, 0, 10, 5.6},
+	{"10.0", "Pick 0.0 - 10.1", "q", false, true, false, 1, 10.1, 10.0},
+	{"10.1", "Pick 1.0 - 10.1", "q", false, false, false, 1, 10.1, 10.1},
+	{"0.999999", "Pick 0.999999 - 10.0", "q", false, false, false, 0.999999, 10, 0.999999},
+	{"q", "Pick 1.0 - 10.0", "q", false, false, true, 1, 10, 0.0},
+}
+
+func TestPromptVerifyFloat32Range(t *testing.T) {
+	for _, test := range gPVF32RTests {
+
+		tmpfile := initTest(&test.input)
+
+		rdr := bufio.NewReader(tmpfile)
+
+		result, safeExit, o, _ := GetPromptVerifyFloat32Range(rdr, test.prompt, test.safeW, test.min, test.max, test.inclusive)
+
+		if safeExit != test.safeE {
+			t.Errorf("Test safeExit status %t does not match the expected safeExit status %t", safeExit, test.safeE)
+		}
+
+		if result != test.valid {
+			t.Errorf(
+				"Input %s resulting in %t does not match %t expected result",
+				test.input,
+				result,
+				test.valid,
+			)
+		}
+
+		if o != test.output {
+			t.Errorf("Output %f does not match the expected output %f", o, test.output)
+		}
+	}
+}
+
+type getPromptVerifyFloat64RangeTest struct {
+	input, prompt, safeW    string
+	inclusive, valid, safeE bool
+	min, max, output        float64
+}
+
+var gPVF64RTests = []getPromptVerifyFloat64RangeTest{
+	{"1.0", "Pick 1.0 - 10.0", "q", true, true, false, 1, 10, 1.0},
+	{"5.6", "Pick 1.0 - 10.0", "q", true, true, false, 1, 10, 5.6},
+	{"10.0", "Pick 1.0 - 10.0", "q", true, true, false, 1, 10, 10.0},
+	{"10.1", "Pick 1.0 - 10.0", "q", true, false, false, 1, 10, 10.1},
+	{"0.999999", "Pick 1.0 - 10.0", "q", true, false, false, 1, 10, 0.999999},
+	{"q", "Pick 1.0 - 10.0", "q", true, false, true, 1, 10, 0.0},
+	{"1.0", "Pick 0.0 - 10.0", "q", false, true, false, 0, 10, 1.0},
+	{"5.6", "Pick 0.0 - 10.0", "q", false, true, false, 0, 10, 5.6},
+	{"10.0", "Pick 0.0 - 10.1", "q", false, true, false, 1, 10.1, 10.0},
+	{"10.1", "Pick 1.0 - 10.1", "q", false, false, false, 1, 10.1, 10.1},
+	{"0.999999", "Pick 0.999999 - 10.0", "q", false, false, false, 0.999999, 10, 0.999999},
+	{"q", "Pick 1.0 - 10.0", "q", false, false, true, 1, 10, 0.0},
+}
+
+func TestPromptVerifyFloat64Range(t *testing.T) {
+	for _, test := range gPVF64RTests {
+
+		tmpfile := initTest(&test.input)
+
+		rdr := bufio.NewReader(tmpfile)
+
+		result, safeExit, o, _ := GetPromptVerifyFloat64Range(rdr, test.prompt, test.safeW, test.min, test.max, test.inclusive)
+
+		if safeExit != test.safeE {
+			t.Errorf("Test safeExit status %t does not match the expected safeExit status %t", safeExit, test.safeE)
+		}
+
+		if result != test.valid {
+			t.Errorf(
+				"Input %s resulting in %t does not match %t expected result",
+				test.input,
+				result,
+				test.valid,
+			)
+		}
+		
+		if !withinTolerance(o, test.output, 1e-7) {
+			t.Errorf("Output %f does not match the expected output %f; The dif is %f",
+				o,
+				test.output,
+				getFloatDif(&o, &test.output),
+			)
+			fmt.Println(getFloatDif(&o, &test.output))
+		}
+	}
+}
+
+func withinTolerance(a, b, e float64) bool {
+	if a == b {
+		return true
+	}
+
+	d := math.Abs(a - b)
+
+	if b == 0 {
+		return d < e
+	}
+
+	return (d / math.Abs(b)) < e
+}
+
+func getFloatDif(o, ex *float64) float64 {
+	return *o - *ex
 }

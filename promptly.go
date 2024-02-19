@@ -6,12 +6,15 @@ package promptly
 
 import (
 	"bufio"
-	"cmp"
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
+
+const intR string = `^[+-]?\d*$`
+const floatR string = `^[+-]?\d*(.\d*)?$`
 
 // GetSimplePromptText gets a single line from the bufio Reader.
 // It also removes the line break '\n' from the input.
@@ -63,81 +66,85 @@ func GetPromptVerifyRegex(rdr *bufio.Reader, prmpt, safeW, rS string) (valid, sa
 	return r.MatchString(in), false, in, nil
 }
 
-// GetPromptVerifyLoop attempts to get input until the input is valid. If the
-// input received is invalid, GetPromptVerify will loop again and ask for input
-// again. Once the input is valid GetPromptVerify will return whether or not
-// the user took the safe exit and the user's choice.
-func GetPromptVerifyLoop(rdr *bufio.Reader, prmpt, safeW string, vi []string, caseS bool) (safeExit bool, input string) {
-	if !caseS {
-		stringSliceToLower(&vi)
+// GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
+// between the min and max int. There is also an option to make the this prompt
+// inclusive (incl == true) or exclusive (incl == false)
+func GetPromptVerifyIntRange(
+	rdr *bufio.Reader,
+	prmpt, safeW string,
+	min, max int,
+	incl bool,
+) (valid, safeExit bool, input int, err error) {
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, intR)
+
+	if err != nil {
+		return valid, safeExit, 0, err
 	}
 
-	vIM := sliceToBoolMap[string](vi)
-
-	for {
-		in := GetSimplePromptText(rdr, prmpt)
-
-		if strings.EqualFold(in, safeW) {
-			return true, in
-		}
-
-		if !caseS {
-			in = strings.ToLower(in)
-		}
-
-		isValid := vIM[in]
-		if !isValid {
-			fmt.Printf("Input '%s' is invalid. Try again", in)
-		} else {
-			return false, in
-		}
+	if !valid || safeExit {
+		return valid, safeExit, 0, nil
 	}
+
+	convIn, err := strconv.Atoi(in)
+	if err != nil {
+		return false, false, 0, err
+	}
+
+	return numericFitsInRange[int](&incl, &convIn, &min, &max)
 }
 
-// GetPromptVerifyRegexLoop attempts to get input until the input is valid. If
-// the regex 'rS' is invalid, the program will panic as the set up to this would
-// be fundamentally incorrect and cause an infinite loop. Otherwise, it
-// verifies the input. If the input is invalid, then it will attempt to get the
-// input again. If the input is valid, then the input will be returned along
-// with a safe-exit status of false. If the user used a safe word, then the
-// safe exit state will be true and returned along with the input.
-func GetPromptVerifyRegexLoop(rdr *bufio.Reader, prmpt, safeW string, rS string) (safeExit bool, input string) {
-	for {
-		isValid, safeE, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, rS)
-		if err != nil {
-			fmt.Printf("Regex '%s' is invalid", rS)
-			panic(-1)
-		}
+// GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
+// between the min and max float32. There is also an option to make the this prompt
+// inclusive (incl == true) or exclusive (incl == false)
+func GetPromptVerifyFloat32Range(
+	rdr *bufio.Reader,
+	prmpt, safeW string,
+	min, max float32,
+	incl bool,
+) (valid, safeExit bool, input float32, err error) {
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, floatR)
 
-		if safeE {
-			return true, in
-		}
-
-		if !isValid {
-			fmt.Printf("Input '%s' is invalid. Try again", in)
-		} else {
-			return false, in
-		}
+	if err != nil {
+		return valid, safeExit, 0, err
 	}
+
+	if !valid || safeExit {
+		return valid, safeExit, 0, nil
+	}
+
+	pIn, err := strconv.ParseFloat(in, 32)
+	if err != nil {
+		return false, false, 0, err
+	}
+
+	convIn := float32(pIn)
+	return numericFitsInRange[float32](&incl, &convIn, &min, &max)
 }
 
-// sliceToBoolMap is helper function that takes in a slice of types that
-// implement cmp.Ordered (as O) and returns a map with the O type as a key
-// and bool as the value. Effectively creating a set
-func sliceToBoolMap[O cmp.Ordered](slice []O) map[O]bool {
-	m := make(map[O]bool)
+// GetPromptVerifyIntRange verifies that input is numeric, and that it fits in
+// between the min and max float64. There is also an option to make the this prompt
+// inclusive (incl == true) or exclusive (incl == false). Caution, there is an accuracy
+// within 7 decimal places, so be wary.
+func GetPromptVerifyFloat64Range(
+	rdr *bufio.Reader,
+	prmpt, safeW string,
+	min, max float64,
+	incl bool,
+) (valid, safeExit bool, input float64, err error) {
+	valid, safeExit, in, err := GetPromptVerifyRegex(rdr, prmpt, safeW, floatR)
 
-	for _, el := range slice {
-		m[el] = true
+	if err != nil {
+		return valid, safeExit, 0, err
 	}
 
-	return m
-}
-
-// stringSliceToLower is a helper function that mutates a string slice to
-// lowercase.
-func stringSliceToLower(slice *[]string) {
-	for i, el := range *slice {
-		(*slice)[i] = strings.ToLower(el)
+	if !valid || safeExit {
+		return valid, safeExit, 0, nil
 	}
+
+	convIn, err := strconv.ParseFloat(in, 32)
+	if err != nil {
+		return false, false, 0, err
+	}
+
+	return numericFitsInRange[float64](&incl, &convIn, &min, &max)
 }
